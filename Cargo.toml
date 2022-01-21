@@ -1,0 +1,16 @@
+[package]
+name = "ec-el-gamal-comparison"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rand = "0.8.4"
+getrandom = "0.2.4"
+rand_core = "0.5"
+scicrypt = "0.4.0"
+scicrypt-he = "0.4.0"
+scicrypt-traits = "0.4.0"
+scicrypt-numbertheory = "0.4.0"
+curve25519-dalek = "3"
