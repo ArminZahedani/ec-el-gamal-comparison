@@ -7,10 +7,13 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.4"
-getrandom = "0.2.4"
 rand_core = "0.5"
-scicrypt = "0.4.0"
-scicrypt-he = "0.4.0"
-scicrypt-traits = "0.4.0"
-scicrypt-numbertheory = "0.4.0"
-curve25519-dalek = "3"
+serde = { version = "1.0", features = ["derive"] }
+bincode = "1.0"
+
+#using a local version of scicrypt due to serde
+scicrypt = {path = "../scicrypt/scicrypt" }
+scicrypt-he = {path = "../scicrypt/scicrypt-he" }
+scicrypt-traits = {path = "../scicrypt/scicrypt-traits" }
+scicrypt-numbertheory = {path = "../scicrypt/scicrypt-numbertheory" }
+curve25519-dalek = { version = "3", features = ["serde"] }
