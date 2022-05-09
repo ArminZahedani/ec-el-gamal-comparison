@@ -9,6 +9,8 @@ use scicrypt_traits::randomness::GeneralRng;
 
 pub const L: u32 = 32;
 
+/// Computes the adding sum x_i * (2^i) factors from the paper
+/// f is a function, either + or - for the two cases
 pub fn cumulative_power_two<F>(
     plain_number: Integer,
     f: F,
