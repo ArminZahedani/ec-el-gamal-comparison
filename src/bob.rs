@@ -35,11 +35,11 @@ pub fn bob_plaintext_comparison(
     for c in encrypted_e_i {
         let plain = CurveElGamal::decrypt(&c.enrich(&pk), &sk);
         if plain == zero {
-            tx_bob.send(serialize(&true).unwrap()).unwrap();
+            //tx_bob.send(serialize(&true).unwrap()).unwrap();
             return true;
         }
     }
-    tx_bob.send(serialize(&false).unwrap()).unwrap();
+    //tx_bob.send(serialize(&false).unwrap()).unwrap();
     return false;
 }
 

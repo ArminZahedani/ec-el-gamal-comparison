@@ -23,17 +23,16 @@ pub fn alice_plaintext_comparison(
     rx_alice: &Receiver<Vec<u8>>,
     plaintext: Integer,
     pk: RistrettoPoint,
-) -> bool {
+) -> i64 {
     let mut rng = GeneralRng::new(OsRng);
     let delta: bool = rand::random();
 
-    //Not used atm.
-    let _s: i32 = match delta {
+    let s: i64 = match delta {
         false => 1,
         true => -1,
     };
 
-    let v_i = utils::cumulative_power_two(plaintext, std::ops::Sub::sub, 1, &pk, &mut rng); //the 1 should be s, if non-determinism is wanted.
+    let v_i = utils::cumulative_power_two(plaintext, std::ops::Sub::sub, s, &pk, &mut rng); //the 1 should be s, if non-determinism is wanted.
 
     let mut encrypted_c: Vec<CurveElGamalCiphertext> = vec![];
     let received: Vec<CurveElGamalCiphertext> = deserialize(&rx_alice.recv().unwrap()).unwrap();
@@ -45,7 +44,8 @@ pub fn alice_plaintext_comparison(
 
     tx_alice.send(serialize(&encrypted_c).unwrap()).unwrap();
 
-    deserialize(&rx_alice.recv().unwrap()).unwrap() //receive the final result again.
+    //deserialize(&rx_alice.recv().unwrap()).unwrap() //receive the final result again.
+    s
 }
 
 /// Encrypted Comparison when the two values to compare are encrypted at Alice's side, and Bob has the secret key.
@@ -91,9 +91,21 @@ pub fn alice_encrypted_comparison(
 
     let r_div_2_l_enc_inv_rich = r_div_2_l_enc_inv.enrich(&pk_paillier);
 
-    alice_plaintext_comparison(&tx_alice, &rx_alice, r_mod_2_l, pk_ecc);
+    let s = alice_plaintext_comparison(&tx_alice, &rx_alice, r_mod_2_l, pk_ecc);
 
     let result_plaintext: PaillierCiphertext = deserialize(&rx_alice.recv().unwrap()).unwrap();
+    let result_plaintext_invert = PaillierCiphertext {
+        c: result_plaintext.clone().c.invert(&n_squared).unwrap(),
+    };
+    let enc_one = Paillier::encrypt(&Integer::from(1 as u32), &pk_paillier, &mut rng).enrich(&pk_paillier);
+
+    let result_plaintext_invert = result_plaintext_invert.enrich(&pk_paillier);
+
+    let result_plaintext = match s {
+        1 => result_plaintext,
+        -1 => (&enc_one +  &result_plaintext_invert).ciphertext,
+        _ => panic!("Should not happen"),
+    };
 
     let result_plaintext_invert = PaillierCiphertext {
         c: result_plaintext.c.invert(&n_squared).unwrap(),
