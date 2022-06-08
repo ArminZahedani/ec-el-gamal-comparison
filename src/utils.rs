@@ -21,12 +21,12 @@ pub fn cumulative_power_two<F>(
 where
     F: Fn(i64, i64) -> i64,
 {
-    let number_bin = format!("{:032b}", plain_number);
+    let number_bin = format!("{:064b}", plain_number);
     let mut messages: Vec<CurveElGamalCiphertext> = vec![];
     for (i, bit) in number_bin.chars().rev().enumerate() {
         let plaintext: i64 = bit.to_digit(2).unwrap() as i64;
         let mut offset: u64 = 0;
-        for j in i + 1..L as usize {
+        for j in i + 1..64 as usize {
             //todo, use .to_digit here as well
             let plaintext2: u64 = number_bin
                 .chars()
@@ -47,6 +47,6 @@ where
         }
         messages.push(CurveElGamal::encrypt(&plaintext_encoded, &pk, rng));
     }
-    messages.reverse();
+
     messages
 }

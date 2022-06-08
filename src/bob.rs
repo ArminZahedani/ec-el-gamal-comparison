@@ -26,7 +26,7 @@ pub fn bob_plaintext_comparison(
 ) -> bool {
     let mut rng = GeneralRng::new(OsRng);
     let zero: RistrettoPoint = &Scalar::from(0u64) * RISTRETTO_BASEPOINT_POINT;
-    let t_i = utils::cumulative_power_two(plaintext, std::ops::Add::add, 0, &pk, &mut rng);
+    let t_i = utils::cumulative_power_two(3 * plaintext + 1, std::ops::Add::add, 0, &pk, &mut rng);
 
     tx_bob.send(serialize(&t_i).unwrap()).unwrap(); //send encrypted t_i to Alice
 

@@ -16,14 +16,16 @@ mod bob;
 mod utils;
 
 fn main() {
-    //algo computes i >? j.
+    //Encrypted comparison computes i >= j.
+    // plaintext comparison computes i< j
+    // if these tests are supposed to be ran, change the uncommented lines in alice.rs and bob.rs
     let mut rng = GeneralRng::new(OsRng);
     let (tx_alice, rx_bob): (Sender<Vec<u8>>, Receiver<Vec<u8>>) = channel();
 
     let (tx_bob, rx_alice): (Sender<Vec<u8>>, Receiver<Vec<u8>>) = channel();
 
-    let i = 150;
-    let j = 170;
+    let i = 150 as u32;
+    let j = 170 as u32;
 
     let (pk_ecc, sk_ecc) = CurveElGamal::generate_keys(&Default::default(), &mut rng);
     let (pk_paillier, sk_paillier) =
@@ -45,7 +47,7 @@ fn main() {
     });
 
     let result = alice::alice_encrypted_comparison(tx_alice, rx_alice, a, b, &pk_paillier, pk_ecc);
-    assert_eq!(result, i > j);
+    assert_eq!(result, i >= j);
 
     let mut r = StdRng::seed_from_u64(42);
     for _i in 0..100 {
@@ -64,7 +66,7 @@ fn main() {
 
         let result =
             alice::alice_plaintext_comparison(&tx_alice, &rx_alice, Integer::from(b as u32), pk);
-        assert_eq!(result, a < b);
+        assert_eq!(result.1, a < b);
     }
 }
 
@@ -92,7 +94,7 @@ mod tests {
 
         let result =
             alice::alice_plaintext_comparison(&tx_alice, &rx_alice, Integer::from(b as u32), pk);
-        assert_eq!(result, a < b);
+        assert_eq!(result.1, a < b);
     }
     #[test]
     fn test_plaintext_comparison_random() {
@@ -117,7 +119,7 @@ mod tests {
                 Integer::from(b as u32),
                 pk,
             );
-            assert_eq!(result, a < b);
+            assert_eq!(result.1, a < b);
         }
     }
 
