@@ -16,4 +16,5 @@ scicrypt = {path = "../scicrypt/scicrypt" }
 scicrypt-he = {path = "../scicrypt/scicrypt-he" }
 scicrypt-traits = {path = "../scicrypt/scicrypt-traits" }
 scicrypt-numbertheory = {path = "../scicrypt/scicrypt-numbertheory" }
-curve25519-dalek = { package = "curve25519-dalek-ng", version = "4", features = ["serde"] }
+#curve25519-dalek-ng = { package = "curve25519-dalek-ng", version = "4", features = ["serde"] }
+curve25519-dalek = { package = "curve25519-dalek", version = "4.0.0-pre.2", features = ["serde"] }

@@ -2,9 +2,9 @@ use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use rug::Integer;
-use scicrypt::cryptosystems::curve_el_gamal::CurveElGamal;
 use scicrypt::cryptosystems::curve_el_gamal::CurveElGamalCiphertext;
-use scicrypt_traits::cryptosystems::AsymmetricCryptosystem;
+use scicrypt::cryptosystems::curve_el_gamal::PrecomputedCurveElGamalPK;
+use scicrypt_traits::cryptosystems::EncryptionKey;
 use scicrypt_traits::randomness::GeneralRng;
 
 pub const L: u32 = 32;
@@ -15,7 +15,7 @@ pub fn cumulative_power_two<F>(
     plain_number: Integer,
     f: F,
     s: i64,
-    pk: &RistrettoPoint,
+    pk: &PrecomputedCurveElGamalPK,
     rng: &mut GeneralRng<rand_core::OsRng>,
 ) -> Vec<CurveElGamalCiphertext>
 where
@@ -23,11 +23,11 @@ where
 {
     let number_bin = format!("{:064b}", plain_number);
     let mut messages: Vec<CurveElGamalCiphertext> = vec![];
+
     for (i, bit) in number_bin.chars().rev().enumerate() {
         let plaintext: i64 = bit.to_digit(2).unwrap() as i64;
         let mut offset: u64 = 0;
         for j in i + 1..64 as usize {
-            //todo, use .to_digit here as well
             let plaintext2: u64 = number_bin
                 .chars()
                 .rev()
@@ -45,8 +45,7 @@ where
         } else {
             plaintext_encoded = &Scalar::from(result as u64) * &RISTRETTO_BASEPOINT_POINT;
         }
-        messages.push(CurveElGamal::encrypt(&plaintext_encoded, &pk, rng));
+        messages.push(pk.encrypt_raw(&plaintext_encoded, rng));
     }
-
     messages
 }

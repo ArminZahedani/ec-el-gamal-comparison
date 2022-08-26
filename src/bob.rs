@@ -4,14 +4,16 @@ use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use rand_core::OsRng;
 use rug::Integer;
-use scicrypt::cryptosystems::curve_el_gamal::CurveElGamal;
 use scicrypt::cryptosystems::curve_el_gamal::CurveElGamalCiphertext;
-use scicrypt::cryptosystems::paillier::Paillier;
+use scicrypt::cryptosystems::curve_el_gamal::CurveElGamalSK;
+use scicrypt::cryptosystems::curve_el_gamal::PrecomputedCurveElGamalPK;
 use scicrypt::cryptosystems::paillier::PaillierCiphertext;
-use scicrypt::cryptosystems::paillier::PaillierPublicKey;
-use scicrypt_traits::cryptosystems::AsymmetricCryptosystem;
+use scicrypt::cryptosystems::paillier::PaillierPK;
+use scicrypt::cryptosystems::paillier::PaillierSK;
+use scicrypt_traits::cryptosystems::Associable;
+use scicrypt_traits::cryptosystems::DecryptionKey;
+use scicrypt_traits::cryptosystems::EncryptionKey;
 use scicrypt_traits::randomness::GeneralRng;
-use scicrypt_traits::Enrichable;
 use std::sync::mpsc::{Receiver, Sender};
 
 use crate::utils;
@@ -21,8 +23,8 @@ pub fn bob_plaintext_comparison(
     tx_bob: &Sender<Vec<u8>>,
     rx_bob: &Receiver<Vec<u8>>,
     plaintext: Integer,
-    pk: RistrettoPoint,
-    sk: Scalar,
+    pk: &PrecomputedCurveElGamalPK,
+    sk: &CurveElGamalSK,
 ) -> bool {
     let mut rng = GeneralRng::new(OsRng);
     let zero: RistrettoPoint = &Scalar::from(0u64) * RISTRETTO_BASEPOINT_POINT;
@@ -33,13 +35,12 @@ pub fn bob_plaintext_comparison(
     let encrypted_e_i: Vec<CurveElGamalCiphertext> = deserialize(&rx_bob.recv().unwrap()).unwrap(); //receive e_i to decrypt and check for 0.
 
     for c in encrypted_e_i {
-        let plain = CurveElGamal::decrypt(&c.enrich(&pk), &sk);
+        let associated_c = c.associate(pk);
+        let plain = sk.decrypt(&associated_c);
         if plain == zero {
-            //tx_bob.send(serialize(&true).unwrap()).unwrap();
             return true;
         }
     }
-    //tx_bob.send(serialize(&false).unwrap()).unwrap();
     return false;
 }
 
@@ -48,21 +49,21 @@ pub fn bob_plaintext_comparison(
 pub fn bob_encrypted_comparison(
     tx_bob: Sender<Vec<u8>>,
     rx_bob: Receiver<Vec<u8>>,
-    pk_paillier: PaillierPublicKey,
-    sk_paillier: (Integer, Integer),
-    pk_ecc: RistrettoPoint,
-    sk_ecc: Scalar,
+    pk_paillier: &PaillierPK,
+    sk_paillier: &PaillierSK,
+    pk_ecc: &PrecomputedCurveElGamalPK,
+    sk_ecc: &CurveElGamalSK,
 ) -> bool {
     let mut rng = GeneralRng::new(OsRng);
     let two_l = u64::pow(2, utils::L);
 
     let d_enc: PaillierCiphertext = deserialize(&rx_bob.recv().unwrap()).unwrap();
-    let d = Paillier::decrypt(&d_enc.enrich(&pk_paillier), &sk_paillier);
+    let d = sk_paillier.decrypt(&(d_enc.associate(&pk_paillier)));
 
     let (d_div_2_l, d_mod_2_l) = d.div_rem_floor(Integer::from(two_l));
 
-    let d_div_2_l_enc = Paillier::encrypt(&d_div_2_l, &pk_paillier, &mut rng);
-    let d_mod_2_l_enc = Paillier::encrypt(&d_mod_2_l, &pk_paillier, &mut rng);
+    let d_div_2_l_enc = pk_paillier.encrypt_raw(&d_div_2_l, &mut rng);
+    let d_mod_2_l_enc = pk_paillier.encrypt_raw(&d_mod_2_l, &mut rng);
 
     tx_bob.send(serialize(&d_div_2_l_enc).unwrap()).unwrap();
     tx_bob.send(serialize(&d_mod_2_l_enc).unwrap()).unwrap();
@@ -73,12 +74,12 @@ pub fn bob_encrypted_comparison(
         false => 0,
     };
 
-    let lambda = Paillier::encrypt(&Integer::from(lambd), &pk_paillier, &mut rng);
+    let lambda = pk_paillier.encrypt_raw(&Integer::from(lambd), &mut rng);
 
     tx_bob.send(serialize(&lambda).unwrap()).unwrap();
 
     let final_result_enc: PaillierCiphertext = deserialize(&rx_bob.recv().unwrap()).unwrap();
-    let final_result = Paillier::decrypt(&final_result_enc.enrich(&pk_paillier), &sk_paillier);
+    let final_result = sk_paillier.decrypt(&(final_result_enc.associate(&pk_paillier)));
 
     if final_result == 0 {
         tx_bob.send(serialize(&false).unwrap()).unwrap();
