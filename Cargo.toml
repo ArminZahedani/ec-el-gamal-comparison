@@ -12,7 +12,7 @@ serde = { version = "1.0", features = ["derive"] }
 bincode = "1.0"
 rug = {version = "1.13", features = ["serde"] }
 #using a local version of scicrypt due to serde
-scicrypt = {path = "../scicrypt/scicrypt" }
+scicrypt = {path = "../scicrypt/scicrypt"}
 scicrypt-he = {path = "../scicrypt/scicrypt-he" }
 scicrypt-traits = {path = "../scicrypt/scicrypt-traits" }
 scicrypt-numbertheory = {path = "../scicrypt/scicrypt-numbertheory" }

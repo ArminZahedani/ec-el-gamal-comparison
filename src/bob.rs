@@ -22,13 +22,19 @@ use crate::utils;
 pub fn bob_plaintext_comparison(
     tx_bob: &Sender<Vec<u8>>,
     rx_bob: &Receiver<Vec<u8>>,
-    plaintext: Integer,
+    plaintext: &Integer,
     pk: &PrecomputedCurveElGamalPK,
     sk: &CurveElGamalSK,
 ) -> bool {
     let mut rng = GeneralRng::new(OsRng);
     let zero: RistrettoPoint = &Scalar::from(0u64) * RISTRETTO_BASEPOINT_POINT;
-    let t_i = utils::cumulative_power_two(3 * plaintext + 1, std::ops::Add::add, 0, &pk, &mut rng);
+    let t_i = utils::cumulative_power_two(
+        &(Integer::from(3) * plaintext + 1),
+        std::ops::Add::add,
+        0,
+        &pk,
+        &mut rng,
+    );
 
     tx_bob.send(serialize(&t_i).unwrap()).unwrap(); //send encrypted t_i to Alice
 
@@ -68,7 +74,7 @@ pub fn bob_encrypted_comparison(
     tx_bob.send(serialize(&d_div_2_l_enc).unwrap()).unwrap();
     tx_bob.send(serialize(&d_mod_2_l_enc).unwrap()).unwrap();
 
-    let result = bob_plaintext_comparison(&tx_bob, &rx_bob, d_mod_2_l, pk_ecc, sk_ecc);
+    let result = bob_plaintext_comparison(&tx_bob, &rx_bob, &d_mod_2_l, pk_ecc, sk_ecc);
     let lambd = match result {
         true => 1,
         false => 0,

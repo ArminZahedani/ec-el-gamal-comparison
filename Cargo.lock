@@ -193,7 +193,7 @@ dependencies = [
 
 [[package]]
 name = "scicrypt"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "scicrypt-he",
  "scicrypt-numbertheory",
@@ -202,8 +202,9 @@ dependencies = [
 
 [[package]]
 name = "scicrypt-he"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
+ "bincode",
  "curve25519-dalek",
  "rand_core",
  "rug",
@@ -214,7 +215,7 @@ dependencies = [
 
 [[package]]
 name = "scicrypt-numbertheory"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "rand_core",
  "rug",
@@ -223,7 +224,7 @@ dependencies = [
 
 [[package]]
 name = "scicrypt-traits"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "rand_core",
  "rug",

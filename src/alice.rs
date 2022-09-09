@@ -20,13 +20,19 @@ use crate::utils;
 pub fn alice_plaintext_comparison(
     tx_alice: &Sender<Vec<u8>>,
     rx_alice: &Receiver<Vec<u8>>,
-    plaintext: Integer,
+    plaintext: &Integer,
     pk: &PrecomputedCurveElGamalPK,
     s: i64,
 ) {
     let mut rng = GeneralRng::new(OsRng);
 
-    let v_i = utils::cumulative_power_two(3 * plaintext, std::ops::Sub::sub, s, &pk, &mut rng); //We use 3 * plaintext to get it work in all cases. Change s to always be 1 if non-determinism is not wanted.
+    let v_i = utils::cumulative_power_two(
+        &(Integer::from(3) * plaintext),
+        std::ops::Sub::sub,
+        s,
+        &pk,
+        &mut rng,
+    ); //We use 3 * plaintext to get it work in all cases. Change s to always be 1 if non-determinism is not wanted.
 
     let mut encrypted_c: Vec<CurveElGamalCiphertext> = vec![];
     let received: Vec<CurveElGamalCiphertext> = deserialize(&rx_alice.recv().unwrap()).unwrap();
@@ -34,9 +40,9 @@ pub fn alice_plaintext_comparison(
         // Add v_i's computed by alice to the t_i's from bob and add fresh randomness
         let received_rich = received[i].clone().associate(pk);
         let v_individual = v_i[i].clone().associate(pk);
-        let sum = received_rich + v_individual;
+        let sum = &received_rich + &v_individual;
 
-        encrypted_c.push((sum * Scalar::random(rng.rng())).ciphertext);
+        encrypted_c.push((&sum * &Scalar::random(rng.rng())).ciphertext);
     }
     encrypted_c.shuffle(&mut thread_rng());
 
@@ -48,8 +54,8 @@ pub fn alice_plaintext_comparison(
 pub fn alice_encrypted_comparison(
     tx_alice: Sender<Vec<u8>>,
     rx_alice: Receiver<Vec<u8>>,
-    a: AssociatedCiphertext<PaillierCiphertext, PaillierPK>,
-    b: AssociatedCiphertext<PaillierCiphertext, PaillierPK>,
+    a: &AssociatedCiphertext<PaillierCiphertext, PaillierPK>,
+    b: &AssociatedCiphertext<PaillierCiphertext, PaillierPK>,
     pk_paillier: &PaillierPK,
     pk_ecc: &PrecomputedCurveElGamalPK,
     s: i64,
@@ -63,13 +69,14 @@ pub fn alice_encrypted_comparison(
     let r_enc = pk_paillier.encrypt(&r, &mut rng);
 
     let n_squared = Integer::from(pk_paillier.n.square_ref());
+    let b_cpy = b.ciphertext.clone();
     let b_invert = PaillierCiphertext {
-        c: b.ciphertext.c.invert(&n_squared).unwrap(),
+        c: b_cpy.c.invert(&n_squared).unwrap(),
     };
 
     let b_invert_rich = b_invert.associate(pk_paillier);
 
-    let d = two_l_enc + a + b_invert_rich + r_enc;
+    let d = &(&two_l_enc + a) + &(&b_invert_rich + &r_enc);
 
     tx_alice.send(serialize(&d.ciphertext).unwrap()).unwrap();
 
@@ -87,7 +94,7 @@ pub fn alice_encrypted_comparison(
 
     let r_div_2_l_enc_inv_rich = r_div_2_l_enc_inv.associate(pk_paillier);
 
-    alice_plaintext_comparison(&tx_alice, &rx_alice, r_mod_2_l, &pk_ecc, s);
+    alice_plaintext_comparison(&tx_alice, &rx_alice, &r_mod_2_l, &pk_ecc, s);
 
     let result_plaintext: PaillierCiphertext = deserialize(&rx_alice.recv().unwrap()).unwrap();
     let result_plaintext_invert = PaillierCiphertext {
@@ -99,7 +106,7 @@ pub fn alice_encrypted_comparison(
 
     let result_plaintext = match s {
         1 => result_plaintext,
-        -1 => (enc_one + result_plaintext_invert).ciphertext,
+        -1 => (&enc_one + &result_plaintext_invert).ciphertext,
         _ => panic!("s should be either 0 or 1"),
     };
 
@@ -109,7 +116,7 @@ pub fn alice_encrypted_comparison(
 
     let result_invert_rich = result_plaintext_invert.associate(pk_paillier);
 
-    let final_result_enc = (d_div_2_l_rich + r_div_2_l_enc_inv_rich) + result_invert_rich;
+    let final_result_enc = &(&d_div_2_l_rich + &r_div_2_l_enc_inv_rich) + &result_invert_rich;
 
     tx_alice
         .send(serialize(&final_result_enc.ciphertext).unwrap())

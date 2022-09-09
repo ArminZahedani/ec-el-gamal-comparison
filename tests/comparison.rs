@@ -58,8 +58,8 @@ mod tests {
             let result = alice::alice_encrypted_comparison(
                 tx_alice,
                 rx_alice,
-                a,
-                b,
+                &a,
+                &b,
                 &pk_paillier,
                 &pk_ecc,
                 s,
@@ -95,7 +95,7 @@ mod tests {
                 alice::alice_plaintext_comparison(
                     &tx_alice,
                     &rx_alice,
-                    Integer::from(a_org),
+                    &Integer::from(a_org),
                     &pk_ecc,
                     s,
                 );
@@ -104,7 +104,7 @@ mod tests {
             let result = bob::bob_plaintext_comparison(
                 &tx_bob,
                 &rx_bob,
-                Integer::from(b_org),
+                &Integer::from(b_org),
                 &pk_ecc_clone,
                 &sk_ecc,
             );
@@ -138,7 +138,7 @@ mod tests {
                 alice::alice_plaintext_comparison(
                     &tx_alice,
                     &rx_alice,
-                    Integer::from(a_org),
+                    &Integer::from(a_org),
                     &pk_ecc,
                     s,
                 );
@@ -147,7 +147,7 @@ mod tests {
             let result = bob::bob_plaintext_comparison(
                 &tx_bob,
                 &rx_bob,
-                Integer::from(b_org),
+                &Integer::from(b_org),
                 &pk_ecc_clone,
                 &sk_ecc,
             );
