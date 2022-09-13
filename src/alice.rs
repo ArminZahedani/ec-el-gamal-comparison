@@ -3,11 +3,11 @@ use curve25519_dalek::scalar::Scalar;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use rand_core::OsRng;
-use rug::Integer;
 use scicrypt::cryptosystems::curve_el_gamal::CurveElGamalCiphertext;
 use scicrypt::cryptosystems::curve_el_gamal::PrecomputedCurveElGamalPK;
 use scicrypt::cryptosystems::paillier::PaillierCiphertext;
 use scicrypt::cryptosystems::paillier::PaillierPK;
+use scicrypt_bigint::UnsignedInteger;
 use scicrypt_traits::cryptosystems::Associable;
 use scicrypt_traits::cryptosystems::AssociatedCiphertext;
 use scicrypt_traits::cryptosystems::EncryptionKey;
@@ -20,14 +20,14 @@ use crate::utils;
 pub fn alice_plaintext_comparison(
     tx_alice: &Sender<Vec<u8>>,
     rx_alice: &Receiver<Vec<u8>>,
-    plaintext: &Integer,
+    plaintext: &UnsignedInteger,
     pk: &PrecomputedCurveElGamalPK,
     s: i64,
 ) {
     let mut rng = GeneralRng::new(OsRng);
 
     let v_i = utils::cumulative_power_two(
-        &(Integer::from(3) * plaintext),
+        &(&UnsignedInteger::from(3) * plaintext),
         std::ops::Sub::sub,
         s,
         &pk,
@@ -62,13 +62,13 @@ pub fn alice_encrypted_comparison(
 ) -> bool {
     let mut rng = GeneralRng::new(OsRng);
 
-    let two_l = Integer::from(u64::pow(2, utils::L));
+    let two_l = UnsignedInteger::from(u64::pow(2, utils::L));
     let two_l_enc = pk_paillier.encrypt(&two_l, &mut rng);
 
-    let r = Integer::from(rand::random::<u64>());
+    let r = UnsignedInteger::from(rand::random::<u64>());
     let r_enc = pk_paillier.encrypt(&r, &mut rng);
 
-    let n_squared = Integer::from(pk_paillier.n.square_ref());
+    let n_squared = UnsignedInteger::from(pk_paillier.n.square());
     let b_cpy = b.ciphertext.clone();
     let b_invert = PaillierCiphertext {
         c: b_cpy.c.invert(&n_squared).unwrap(),
@@ -85,7 +85,9 @@ pub fn alice_encrypted_comparison(
 
     let d_div_2_l_rich = d_div_2_l.associate(pk_paillier);
 
-    let (r_div_2_l, r_mod_2_l) = r.div_rem_floor(two_l); //compute floor(r/2^l) and remainder.
+    let (r_div_2_l, r_mod_2_l) = r.to_rug().div_rem_floor(two_l.to_rug()); //compute floor(r/2^l) and remainder.
+    let (r_div_2_l, r_mod_2_l) = (UnsignedInteger::from(r_div_2_l), UnsignedInteger::from(r_mod_2_l));
+
     let r_div_2_l_enc = pk_paillier.encrypt_raw(&r_div_2_l, &mut rng);
 
     let r_div_2_l_enc_inv = PaillierCiphertext {
@@ -100,7 +102,7 @@ pub fn alice_encrypted_comparison(
     let result_plaintext_invert = PaillierCiphertext {
         c: result_plaintext.c.clone().invert(&n_squared).unwrap(),
     };
-    let enc_one = pk_paillier.encrypt(&Integer::from(1 as u32), &mut rng);
+    let enc_one = pk_paillier.encrypt(&UnsignedInteger::from(1), &mut rng);
 
     let result_plaintext_invert = result_plaintext_invert.associate(pk_paillier);
 

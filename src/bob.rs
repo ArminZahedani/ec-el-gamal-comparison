@@ -15,6 +15,7 @@ use scicrypt_traits::cryptosystems::DecryptionKey;
 use scicrypt_traits::cryptosystems::EncryptionKey;
 use scicrypt_traits::randomness::GeneralRng;
 use std::sync::mpsc::{Receiver, Sender};
+use scicrypt_bigint::UnsignedInteger;
 
 use crate::utils;
 
@@ -22,14 +23,14 @@ use crate::utils;
 pub fn bob_plaintext_comparison(
     tx_bob: &Sender<Vec<u8>>,
     rx_bob: &Receiver<Vec<u8>>,
-    plaintext: &Integer,
+    plaintext: &UnsignedInteger,
     pk: &PrecomputedCurveElGamalPK,
     sk: &CurveElGamalSK,
 ) -> bool {
     let mut rng = GeneralRng::new(OsRng);
     let zero: RistrettoPoint = &Scalar::from(0u64) * RISTRETTO_BASEPOINT_POINT;
     let t_i = utils::cumulative_power_two(
-        &(Integer::from(3) * plaintext + 1),
+        &(&UnsignedInteger::from(3) * plaintext + 1),
         std::ops::Add::add,
         0,
         &pk,
@@ -66,7 +67,9 @@ pub fn bob_encrypted_comparison(
     let d_enc: PaillierCiphertext = deserialize(&rx_bob.recv().unwrap()).unwrap();
     let d = sk_paillier.decrypt(&(d_enc.associate(&pk_paillier)));
 
-    let (d_div_2_l, d_mod_2_l) = d.div_rem_floor(Integer::from(two_l));
+    let (d_div_2_l, d_mod_2_l) = d.to_rug().div_rem_floor(Integer::from(two_l));
+
+    let (d_div_2_l, d_mod_2_l) = (UnsignedInteger::from(d_div_2_l), UnsignedInteger::from(d_mod_2_l));
 
     let d_div_2_l_enc = pk_paillier.encrypt_raw(&d_div_2_l, &mut rng);
     let d_mod_2_l_enc = pk_paillier.encrypt_raw(&d_mod_2_l, &mut rng);
@@ -80,14 +83,14 @@ pub fn bob_encrypted_comparison(
         false => 0,
     };
 
-    let lambda = pk_paillier.encrypt_raw(&Integer::from(lambd), &mut rng);
+    let lambda = pk_paillier.encrypt_raw(&UnsignedInteger::from(lambd), &mut rng);
 
     tx_bob.send(serialize(&lambda).unwrap()).unwrap();
 
     let final_result_enc: PaillierCiphertext = deserialize(&rx_bob.recv().unwrap()).unwrap();
     let final_result = sk_paillier.decrypt(&(final_result_enc.associate(&pk_paillier)));
 
-    if final_result == 0 {
+    if final_result.is_zero_leaky() {
         tx_bob.send(serialize(&false).unwrap()).unwrap();
         return false;
     } else {

@@ -6,9 +6,9 @@ mod tests {
     use rand::rngs::StdRng;
     use rand::{Rng, SeedableRng};
     use rand_core::OsRng;
-    use rug::Integer;
     use scicrypt::cryptosystems::curve_el_gamal::CurveElGamal;
     use scicrypt::cryptosystems::paillier::Paillier;
+    use scicrypt_bigint::UnsignedInteger;
     use scicrypt_traits::cryptosystems::AsymmetricCryptosystem;
     use scicrypt_traits::cryptosystems::EncryptionKey;
     use scicrypt_traits::randomness::GeneralRng;
@@ -36,8 +36,8 @@ mod tests {
             let a_org: u32 = r.gen();
             let b_org: u32 = r.gen();
 
-            let a = pk_paillier.encrypt(&Integer::from(a_org), &mut rng);
-            let b = pk_paillier.encrypt(&Integer::from(b_org), &mut rng);
+            let a = pk_paillier.encrypt(&UnsignedInteger::from(a_org as u64), &mut rng);
+            let b = pk_paillier.encrypt(&UnsignedInteger::from(b_org as u64), &mut rng);
             thread::spawn(move || {
                 bob::bob_encrypted_comparison(
                     tx_bob,
@@ -95,7 +95,7 @@ mod tests {
                 alice::alice_plaintext_comparison(
                     &tx_alice,
                     &rx_alice,
-                    &Integer::from(a_org),
+                    &UnsignedInteger::from(a_org as u64),
                     &pk_ecc,
                     s,
                 );
@@ -104,7 +104,7 @@ mod tests {
             let result = bob::bob_plaintext_comparison(
                 &tx_bob,
                 &rx_bob,
-                &Integer::from(b_org),
+                &UnsignedInteger::from(b_org as u64),
                 &pk_ecc_clone,
                 &sk_ecc,
             );
@@ -138,7 +138,7 @@ mod tests {
                 alice::alice_plaintext_comparison(
                     &tx_alice,
                     &rx_alice,
-                    &Integer::from(a_org),
+                    &UnsignedInteger::from(a_org as u64),
                     &pk_ecc,
                     s,
                 );
@@ -147,7 +147,7 @@ mod tests {
             let result = bob::bob_plaintext_comparison(
                 &tx_bob,
                 &rx_bob,
-                &Integer::from(b_org),
+                &UnsignedInteger::from(b_org as u64),
                 &pk_ecc_clone,
                 &sk_ecc,
             );

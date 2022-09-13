@@ -1,9 +1,9 @@
 use curve25519_dalek::constants::RISTRETTO_BASEPOINT_POINT;
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
-use rug::Integer;
 use scicrypt::cryptosystems::curve_el_gamal::CurveElGamalCiphertext;
 use scicrypt::cryptosystems::curve_el_gamal::PrecomputedCurveElGamalPK;
+use scicrypt_bigint::UnsignedInteger;
 use scicrypt_traits::cryptosystems::EncryptionKey;
 use scicrypt_traits::randomness::GeneralRng;
 
@@ -12,7 +12,7 @@ pub const L: u32 = 32;
 /// Computes the adding sum x_i * (2^i) factors from the paper
 /// f is a function, either + or - for the two cases
 pub fn cumulative_power_two<F>(
-    plain_number: &Integer,
+    plain_number: &UnsignedInteger,
     f: F,
     s: i64,
     pk: &PrecomputedCurveElGamalPK,
@@ -21,7 +21,7 @@ pub fn cumulative_power_two<F>(
 where
     F: Fn(i64, i64) -> i64,
 {
-    let number_bin = format!("{:064b}", plain_number);
+    let number_bin = format!("{:064b}", plain_number.clone().to_rug());
     let mut messages: Vec<CurveElGamalCiphertext> = vec![];
 
     for (i, bit) in number_bin.chars().rev().enumerate() {
